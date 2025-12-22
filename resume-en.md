@@ -153,7 +153,7 @@ Graduation Year: 1994
 
 1.  **Unique skill mix:** DevOps + Java Development + Production Support.
 2.  **Deep infrastructure understanding:** Know not only how to write code but also how it works in production.
-3.  **Financial sector experience:** 9+ years at Sberbank, understanding of reliability and security requirements.
+3.  **Financial sector expertise:** 12+ years in leading Russian banks (Sberbank, Raiffeisenbank), building a strong foundation in secure, reliable system design for critical financial operations.
 4.  **Continuous learning:** Actively studying Go, Python, and modern development practices.
 
 ---
