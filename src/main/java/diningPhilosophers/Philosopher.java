@@ -5,13 +5,16 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static diningPhilosophers.Main.EATINGTIME;
-import static diningPhilosophers.Main.PERSONS;
+import static diningPhilosophers.service.EatingService.EATING_TIME;
+import static diningPhilosophers.service.EatingService.POLITE_TIME;
+import static diningPhilosophers.service.EatingService.PERSONS;
 
 public class Philosopher extends Thread {
   int name;
   ReentrantLock leftSpoon;
   ReentrantLock rightSpoon;
+  public String status = "WAITING";
+
 
   public Philosopher(int name, ReentrantLock[] spoons) {
     this.name = name;
@@ -44,8 +47,9 @@ public class Philosopher extends Thread {
             try {
               System.out.println("philosopher " + name + " got second spoon");
               System.out.println("philosopher " + name + " EATING");
+              status = "EATING";
 
-              SleepUtils.sleepSec(EATINGTIME);
+              SleepUtils.sleepSec(EATING_TIME);
 
             } finally {
               System.out.println("philosopher " + name + " finally released second spoon");
@@ -61,7 +65,9 @@ public class Philosopher extends Thread {
       } else {
         System.out.println("philosopher " + name + " can not get first spoon");
       }
-      SleepUtils.sleepSec(2);
+      status = "POLITING";
+      SleepUtils.sleepSec(POLITE_TIME);
+      status = "WAITING";
     }
   }
 }

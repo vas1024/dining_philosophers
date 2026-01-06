@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="RU">
+<head>
+    <meta charset="UTF-8">
+    <title>Философы за столом</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #333;
+        }
+        
+        #chart-container {
+            margin: 20px auto;
+            width: 500px;
+            height: 500px;
+        }
+        
+        .eating {
+            fill: #4CAF50; /* Зеленый - ест */
+        }
+        
+        .waiting {
+            fill: #FF9800; /* Оранжевый - ждет */
+        }
+        
+        .legend {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            border: 1px solid #333;
+        }
+        
+        .philosopher-text {
+            font-size: 14px;
+            font-weight: bold;
+            fill: white;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+<h1>Философы за круглым столом</h1>
+
+<div id="chart-container">
+    <svg id="pie-chart" width="500" height="500"></svg>
+</div>
+
+<div class="legend">
+    <div class="legend-item">
+        <div class="legend-color" style="background: #4CAF50;"></div>
+        <span>Ест</span>
+    </div>
+    <div class="legend-item">
+        <div class="legend-color" style="background: #FF9800;"></div>
+        <span>Ждет</span>
+    </div>
+</div>
+
+<div>
+    <button onclick="updateChart()">Обновить</button>
+    <span id="update-time"></span>
+</div>
+
+<script>
+    const centerX = 250;
+    const centerY = 250;
+    const radius = 200;
+    const philosophersCount = 5;
+    
+    // Создаем начальную диаграмму
+    function createInitialChart() {
+        const svg = document.getElementById('pie-chart');
+        svg.innerHTML = '';
+        
+        // Рисуем круглый стол
+        const table = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        table.setAttribute('cx', centerX);
+        table.setAttribute('cy', centerY);
+        table.setAttribute('r', radius);
+        table.setAttribute('fill', '#8B4513');
+        table.setAttribute('stroke', '#654321');
+        table.setAttribute('stroke-width', '3');
+        svg.appendChild(table);
+        
+        // Создаем сектора для философов
+        for (let i = 0; i < philosophersCount; i++) {
+            createPhilosopherSlice(svg, i, false);
+        }
+        
+        // Центральный текст
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', centerX);
+        text.setAttribute('y', centerY);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('dominant-baseline', 'middle');
+        text.setAttribute('fill', 'white');
+        text.setAttribute('font-size', '20');
+        text.textContent = 'Стол философов';
+        svg.appendChild(text);
+    }
+    
+    // Создает сектор для философа
+    function createPhilosopherSlice(svg, index, isEating) {
+        const sliceAngle = 360 / philosophersCount;
+        const startAngle = index * sliceAngle;
+        const endAngle = startAngle + sliceAngle;
+        
+        const path = createSlicePath(centerX, centerY, radius - 50, startAngle, endAngle);
+        
+        const slice = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        slice.setAttribute('d', path);
+        slice.setAttribute('class', isEating ? 'eating' : 'waiting');
+        slice.setAttribute('data-id', index);
+        slice.setAttribute('stroke', 'white');
+        slice.setAttribute('stroke-width', '2');
+        
+        // Текст с номером философа
+        const midAngle = (startAngle + endAngle) / 2;
+        const textAngle = midAngle * Math.PI / 180;
+        const textX = centerX + (radius - 100) * Math.cos(textAngle);
+        const textY = centerY + (radius - 100) * Math.sin(textAngle);
+        
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', textX);
+        text.setAttribute('y', textY);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('dominant-baseline', 'middle');
+        text.setAttribute('class', 'philosopher-text');
+        text.textContent = index;
+        
+        svg.appendChild(slice);
+        svg.appendChild(text);
+        
+        return slice;
+    }
+    
+    // Создает путь для сектора
+    function createSlicePath(cx, cy, r, startAngle, endAngle) {
+        const start = polarToCartesian(cx, cy, r, endAngle);
+        const end = polarToCartesian(cx, cy, r, startAngle);
+        
+        const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+        
+        return [
+            "M", cx, cy,
+            "L", start.x, start.y,
+            "A", r, r, 0, largeArcFlag, 0, end.x, end.y,
+            "Z"
+        ].join(" ");
+    }
+    
+    // Конвертирует полярные координаты в декартовы
+    function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+        const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
+        return {
+            x: centerX + (radius * Math.cos(angleInRadians)),
+            y: centerY + (radius * Math.sin(angleInRadians))
+        };
+    }
+    
+    // Обновляет диаграмму данными с сервера
+    async function updateChart() {
+        try {
+            const response = await fetch('/api/chart-data');
+            const philosophers = await response.json();
+            
+            // Обновляем цвета секторов
+            philosophers.forEach(p => {
+                const slice = document.querySelector(`path[data-id="${p.id}"]`);
+                if (slice) {
+                    slice.setAttribute('class', p.isEating ? 'eating' : 'waiting');
+                }
+            });
+            
+            // Показываем время обновления
+            const now = new Date();
+            document.getElementById('update-time').textContent = 
+                ' Обновлено: ' + now.toLocaleTimeString();
+                
+        } catch (error) {
+            console.error('Ошибка:', error);
+        }
+    }
+    
+    // Автообновление каждые 2 секунды
+    function startAutoUpdate() {
+        setInterval(updateChart, 500);
+    }
+    
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', function() {
+        createInitialChart();
+        updateChart(); // Первое обновление
+        startAutoUpdate(); // Запускаем автообновление
+    });
+</script>
+</body>
+</html>>
